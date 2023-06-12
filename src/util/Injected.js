@@ -251,6 +251,9 @@ exports.LoadUtils = () => {
                     let linkPreviewResponse = prevResponse.linkPreviewResponse
                         let prevDescription= linkPreviewResponse.description
                         let hqThumbnail = linkPreviewResponse.hqThumbnail
+                        if (!hqThumbnail) {
+                            throw new Error("No hqThumbnail")
+                        }
                         let mediaKey = hqThumbnail.mediaKey
                         let mediaKeyEncoded = window.WWebJS.arrayBufferToBase64(mediaKey)
 
@@ -277,7 +280,7 @@ exports.LoadUtils = () => {
 
                     }catch (t){
                         
-                        if (t.toString().startsWith("TimeoutError")){
+                        if (t.toString().startsWith("TimeoutError") || t.toString().startsWith("Error: No hqThumbnail")){
                             preview = window.Store.genMin.genMinimalLinkPreview(link).data
                         }
                         else throw t
