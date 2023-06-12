@@ -1,8 +1,8 @@
 'use strict';
 
 // Exposes the internal Store to the WhatsApp Web client
-const {TimeoutError} = require("puppeteer");
 exports.ExposeStore = (moduleRaidStr) => {
+    window.Store.linkPreviewCache = {};
     eval('var moduleRaid = ' + moduleRaidStr);
     // eslint-disable-next-line no-undef
     window.mR = moduleRaid();
@@ -78,47 +78,10 @@ exports.ExposeStore = (moduleRaidStr) => {
         };
     }
 
-    // TODO remove these once everybody has been updated to WWebJS with legacy sessions removed
-    const _linkPreview = window.mR.findModule('genMinimalLinkPreview');
     window.Store.reg = window.mR.findModule('registerLinkPreviewHandlerHook')[0];
     window.Store.sendPeer = window.mR.findModule('sendPeerDataOperationRequest')[0];
     window.Store.genMin = window.mR.findModule('genMinimalLinkPreview')[0];
     window.Store.promiseTimeout = window.mR.findModule('promiseTimeout')[0];
-    // window.Store.encodeB64 = window.mR.findModule('decodeB64');
-    // throw new Error("testing" + JSON.stringify(window.Store.encodeB64))
-    
-    // promise.then((result) => {
-    //     throw new Error('testings: ' + prev)
-    // })
-    // throw new Error('testings: ' +JSON.stringify(prev))
-    // const get_linkPreview = window.mR.findModule('getLinkPreview');
-    // throw new Error('results: ' + Object.keys(_linkPreview[0]))
-    // let all_keys = []
-    // for (const module of Object.keys(window.mR.modules)) {
-    //    
-    //     if (module == 331740 || module == "331740"){
-    //         let keys = Object.keys(window.mR.modules[key])
-    //         for (const key of keys) {
-    //             // if (key.toLowerCase().includes('linkpreview') || key.toLowerCase().includes('link_preview')){
-    //                 all_keys.push(key)
-    //             // }
-    //         }
-    //         // let values = Object.values(module)
-    //         // for (const value of values) {
-    //         //     if (value){
-    //         //         all_keys.push(typeof value)
-    //         //     }
-    //         // }
-    //
-    //     }
-    // }
-    // throw new Error('results: ' + Object.keys(window.mR.modules))
-
-    if (_linkPreview && _linkPreview[0]) {
-        window.Store.Wap = _linkPreview[0];
-        // window.Store.Wapg = get_linkPreview[0];
-        // throw new Error('results: ' + Object.keys(_linkPreview[0]))
-    }
 
     const _isMDBackend = window.mR.findModule('isMDBackend');
     if(_isMDBackend && _isMDBackend[0] && _isMDBackend[0].isMDBackend) {
@@ -235,29 +198,31 @@ exports.LoadUtils = () => {
             if(window.Store.MDBackend) {
                 const link = window.Store.Validators.findLink(content);
                 if (link) {
-                    // let preview = await window.Store.Wap.genMinimalLinkPreview({href: 'https://web.whatsapp.com', index: 0, input: 'https://web.whatsapp.com', scheme: 'https://', url: "https://web.whatsapp.com", domain: "web.whatsapp.com"});
-                    // const preview = await window.Store.Wapg.getLinkPreview({id: link.url});
-                    // throw new Error('reached: ' + JSON.stringify(preview))
+
                     let preview = {}
                     try{
-                        let promise =  window.Store.reg.registerLinkPreviewHandlerHook("12345")
-                        window.Store.sendPeer.sendPeerDataOperationRequest(2, {
-                            urls: [link.url],
-                            includeHqThumbnail: true
-                        }, "12345");
-                        let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 5000)
-                    // throw new Error("reached!   " + prevResponse)
+                        // check if link is in linkPreviewCache and use it
+                        if (window.Store.linkPreviewCache[link.url]) {
+                            preview = window.Store.linkPreviewCache[link.url]
+                        } else {
 
-                    let linkPreviewResponse = prevResponse.linkPreviewResponse
-                        let prevDescription= linkPreviewResponse.description
-                        let hqThumbnail = linkPreviewResponse.hqThumbnail
-                        if (!hqThumbnail) {
-                            throw new Error("No hqThumbnail")
-                        }
-                        let mediaKey = hqThumbnail.mediaKey
-                        let mediaKeyEncoded = window.WWebJS.arrayBufferToBase64(mediaKey)
+                            let promise =  window.Store.reg.registerLinkPreviewHandlerHook("12345")
+                            window.Store.sendPeer.sendPeerDataOperationRequest(2, {
+                                urls: [link.url],
+                                includeHqThumbnail: true
+                            }, "12345");
+                            let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 5000)
 
-                        preview= {
+                            let linkPreviewResponse = prevResponse.linkPreviewResponse
+                            let prevDescription= linkPreviewResponse.description
+                            let hqThumbnail = linkPreviewResponse.hqThumbnail
+                            if (!hqThumbnail) {
+                                throw new Error("No hqThumbnail")
+                            }
+                            let mediaKey = hqThumbnail.mediaKey
+                            let mediaKeyEncoded = window.WWebJS.arrayBufferToBase64(mediaKey)
+
+                            preview= {
                                 title: linkPreviewResponse.title,
                                 description: prevDescription,
                                 canonicalUrl: linkPreviewResponse.url,
@@ -274,9 +239,11 @@ exports.LoadUtils = () => {
                                 mediaKey: mediaKeyEncoded,
                                 doNotPlayInline: true,
                                 isLoading: false
+                            }
+                            window.Store.linkPreviewCache[link.url] = preview
+                            
                         }
-                        // throw new Error("reached!   " + JSON.stringify(preview))
-
+                        
 
                     }catch (t){
                         
@@ -285,9 +252,7 @@ exports.LoadUtils = () => {
                         }
                         else throw t
                     }
-   
-                    // throw new Error('reached: ' + JSON.stringify(preview))
-
+                    
                     preview.preview = true; 
                     preview.subtype = 'url';
                     preview.isLoading = false;
