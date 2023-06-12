@@ -276,8 +276,8 @@ exports.LoadUtils = () => {
 
 
                     }catch (t){
-                        throw new Error("exeption!   " + typeof t + "   message   " + t)
-                        if ((typeof t).toString() == "TimeoutError"){
+                        
+                        if (t.toString().startsWith("TimeoutError")){
                             preview = window.Store.genMin.genMinimalLinkPreview(link).data
                         }
                         else throw t
