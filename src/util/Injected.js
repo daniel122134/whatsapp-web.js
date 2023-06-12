@@ -1,8 +1,8 @@
 'use strict';
 
 // Exposes the internal Store to the WhatsApp Web client
-const {TimeoutError} = require("puppeteer");
 exports.ExposeStore = (moduleRaidStr) => {
+    window.Store.linkPreviewCache = {};
     eval('var moduleRaid = ' + moduleRaidStr);
     // eslint-disable-next-line no-undef
     window.mR = moduleRaid();
@@ -201,24 +201,28 @@ exports.LoadUtils = () => {
 
                     let preview = {}
                     try{
-                        // todo - add cache
-                        let promise =  window.Store.reg.registerLinkPreviewHandlerHook("12345")
-                        window.Store.sendPeer.sendPeerDataOperationRequest(2, {
-                            urls: [link.url],
-                            includeHqThumbnail: true
-                        }, "12345");
-                        let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 5000)
+                        // check if link is in linkPreviewCache and use it
+                        if (window.Store.linkPreviewCache[link.url]) {
+                            preview = window.Store.linkPreviewCache[link.url]
+                        } else {
 
-                    let linkPreviewResponse = prevResponse.linkPreviewResponse
-                        let prevDescription= linkPreviewResponse.description
-                        let hqThumbnail = linkPreviewResponse.hqThumbnail
-                        if (!hqThumbnail) {
-                            throw new Error("No hqThumbnail")
-                        }
-                        let mediaKey = hqThumbnail.mediaKey
-                        let mediaKeyEncoded = window.WWebJS.arrayBufferToBase64(mediaKey)
+                            let promise =  window.Store.reg.registerLinkPreviewHandlerHook("12345")
+                            window.Store.sendPeer.sendPeerDataOperationRequest(2, {
+                                urls: [link.url],
+                                includeHqThumbnail: true
+                            }, "12345");
+                            let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 5000)
 
-                        preview= {
+                            let linkPreviewResponse = prevResponse.linkPreviewResponse
+                            let prevDescription= linkPreviewResponse.description
+                            let hqThumbnail = linkPreviewResponse.hqThumbnail
+                            if (!hqThumbnail) {
+                                throw new Error("No hqThumbnail")
+                            }
+                            let mediaKey = hqThumbnail.mediaKey
+                            let mediaKeyEncoded = window.WWebJS.arrayBufferToBase64(mediaKey)
+
+                            preview= {
                                 title: linkPreviewResponse.title,
                                 description: prevDescription,
                                 canonicalUrl: linkPreviewResponse.url,
@@ -235,7 +239,11 @@ exports.LoadUtils = () => {
                                 mediaKey: mediaKeyEncoded,
                                 doNotPlayInline: true,
                                 isLoading: false
+                            }
+                            window.Store.linkPreviewCache[link.url] = preview
+                            
                         }
+                        
 
                     }catch (t){
                         
