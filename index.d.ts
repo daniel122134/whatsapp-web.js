@@ -303,6 +303,11 @@ declare namespace WAWebJS {
             qr: string
         ) => void): this
 
+        /** Emitted when the qr is scanned */
+        on(event: 'initializing', listener: (
+            message: string
+        ) => void): this
+        
         /** Emitted when a call is received */
         on(event: 'call', listener: (
             /** The call that started */
