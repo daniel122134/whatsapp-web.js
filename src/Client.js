@@ -259,10 +259,19 @@ class Client extends EventEmitter {
             });
 
             try {
-                await page.waitForSelector(INTRO_INIT_SELECTOR, { timeout: 10 });
+                await page.waitForSelector(INTRO_INIT_SELECTOR, { timeout: 0 });
                 this.emit(Events.INITIALIZING, {});
             } catch(error) {
-                
+                if (
+                    error.name === 'ProtocolError' &&
+                    error.message &&
+                    error.message.match(/Target closed/)
+                ) {
+                    // something has called .destroy() while waiting
+                    return;
+                }
+
+                throw error;
             }
 
             // Wait for code scan
