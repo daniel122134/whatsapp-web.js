@@ -172,6 +172,7 @@ class Client extends EventEmitter {
             }
         );
 
+        const INTRO_INIT_SELECTOR = '[data-testid="wa-web-loading-screen"]';
         const INTRO_IMG_SELECTOR = '[data-testid="intro-md-beta-logo-dark"], [data-testid="intro-md-beta-logo-light"], [data-asset-intro-image-light="true"], [data-asset-intro-image-dark="true"]';
         const INTRO_QRCODE_SELECTOR = 'div[data-ref] canvas';
 
@@ -256,6 +257,13 @@ class Client extends EventEmitter {
                 QR_CONTAINER,
                 QR_RETRY_BUTTON
             });
+
+            try {
+                await page.waitForSelector(INTRO_INIT_SELECTOR, { timeout: 10 });
+                this.emit(Events.INITIALIZING, {});
+            } catch(error) {
+                
+            }
 
             // Wait for code scan
             try {
