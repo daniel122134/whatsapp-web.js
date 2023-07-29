@@ -212,7 +212,7 @@ exports.LoadUtils = () => {
                                 urls: [link.url],
                                 includeHqThumbnail: true
                             }, "12345");
-                            let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 5000)
+                            let prevResponse = await window.Store.promiseTimeout.promiseTimeout(promise.promise, 10000)
 
                             let linkPreviewResponse = prevResponse.linkPreviewResponse
                             let prevDescription= linkPreviewResponse.description
